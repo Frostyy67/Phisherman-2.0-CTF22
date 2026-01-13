@@ -32,7 +32,7 @@ const Login = () => {
     try {
       const res = await fetch("http://localhost:3000/login", {
         method: "POST",
-        credentials:"include",
+        credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: newdata.email, password: newdata.password })
       });
@@ -49,7 +49,7 @@ const Login = () => {
       }
     } catch (err) {
       setError("password", {
-        type: "manual", 
+        type: "manual",
         message: "Connection error. Please try again.",
       });
     }
@@ -152,7 +152,7 @@ const Login = () => {
                 <Sparkles className="logo-sparkle sparkle-2" />
                 <Sparkles className="logo-sparkle sparkle-3" />
               </div>
-              <h1 className="login-title">Phisherman 2.0</h1>
+              <h1 className="login-title">Phishermen 2.0</h1>
               <p className="login-subtitle">Enter your credentials to access the CTF</p>
             </div>
 

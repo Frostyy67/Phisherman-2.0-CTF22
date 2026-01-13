@@ -1,10 +1,10 @@
 import '../styles/Navbar.css'
 import { Flag, Trophy } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
-const Navbar = ({ points,username }) => {
+const Navbar = ({ points, username }) => {
     const point = points || 0
-    const name=username || "Phisherman 2.0"
-    const navigate=useNavigate()
+    const name = username || "Phishermen 2.0"
+    const navigate = useNavigate()
     return (
         <header className="header">
             <div className="header-content">
@@ -16,7 +16,7 @@ const Navbar = ({ points,username }) => {
                     </div>
                     <div className="header-text">
                         <h1 className="site-title">{name}</h1>
-                        <p className="site-subtitle">Welcome to Phisherman 2.0</p>
+                        <p className="site-subtitle">Welcome to Phishermen 2.0</p>
                     </div>
                 </div>
                 <div className="header-middle">

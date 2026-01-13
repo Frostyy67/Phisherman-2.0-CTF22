@@ -14,11 +14,11 @@ HINT: The hex values spell out something interesting...
 
 # Encoded license key (hex values)
 LICENSE_DATA = [
-    0x43, 0x54, 0x46, 0x7B,  # Header
-    0x72, 0x33, 0x76, 0x33,  # Part 1
-    0x72, 0x73, 0x33, 0x5F,  # Part 2  
-    0x6D, 0x61, 0x73, 0x74,  # Part 3
-    0x33, 0x72, 0x7D         # Footer
+    0x43, 0x54, 0x46, 0x7B,
+    0x72, 0x33, 0x76, 0x33,
+    0x72, 0x73, 0x33, 0x5F,
+    0x6D, 0x61, 0x73, 0x74,
+    0x33, 0x72, 0x7D
 ]
 
 def check_license(user_input):
@@ -35,10 +35,9 @@ def check_license(user_input):
 
 def show_hint():
     """Shows a hint for stuck players"""
-    print("\n💡 HINT: Each hex value represents an ASCII character")
-    print("   0x43 = 'C', 0x54 = 'T', 0x46 = 'F', ...")
-    print("   Use an ASCII table or Python: chr(0x43) → 'C'")
-    print("\n   Try: ''.join([chr(x) for x in LICENSE_DATA])")
+    print("\n💡 HINT: The numbers... what do they mean?")
+    print("   Maybe they are not just random hex values.")
+    print("   Standard ASCII encoding might be key here.")
 
 def main():
     print("=" * 50)
@@ -80,20 +79,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
-# ==================================================
-# SOLUTION (for CTF organizers):
-# ==================================================
-# Flag: CTF{r3v3rs3_mast3r}
-# 
-# How to solve:
-# 1. Look at LICENSE_DATA hex values
-# 2. Convert each hex to ASCII:
-#    0x43='C', 0x54='T', 0x46='F', 0x7B='{'
-#    0x72='r', 0x33='3', 0x76='v', 0x33='3'
-#    0x72='r', 0x73='s', 0x33='3', 0x5F='_'
-#    0x6D='m', 0x61='a', 0x73='s', 0x74='t'
-#    0x33='3', 0x72='r', 0x7D='}'
-# 3. Combined: CTF{r3v3rs3_mast3r}
-# ==================================================

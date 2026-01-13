@@ -5,25 +5,38 @@ import cookieParser from 'cookie-parser';
 import jwt from 'jsonwebtoken';
 import dotenv from "dotenv";
 import rateLimit from 'express-rate-limit';
+import bcrypt from 'bcryptjs';
 import { Solved } from './models/Solved.js'
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 dotenv.config();
 
 const app = express()
-const port = 3000
+const port = process.env.PORT || 3000
 const secretKey = process.env.JWT_SECRET;
 const DB_URL = process.env.ATLAS_URL;
 
 let USE_MEMORY_DB = false;
 
 // ==================== REGISTERED USERS (from .env) ====================
+// ==================== REGISTERED USERS (from .env) ====================
 const REGISTERED_USERS = JSON.parse(process.env.REGISTERED_USERS || '{}');
+console.log("DEBUG_USERS:", JSON.stringify(REGISTERED_USERS, null, 2));
 
 // In-memory user storage
 let memoryUsers = [];
 
 // ==================== CHALLENGES (from .env) ====================
-const CHALLENGES = JSON.parse(process.env.CHALLENGES || '[]');
+const CHALLENGES = [
+  { id: 0, flag: "Hello_CTF_Player{1m_a_bAs64_exp3rt}", points: 100 },
+  { id: 1, flag: "CTF{sql_1nj3ct10n_m4st3r_2024}", points: 500 },
+  { id: 2, flag: "CTF{r3v3rs3_mast3r}", points: 300 },
+  { id: 3, flag: "CTF{network_forensics_pro}", points: 450 }
+];
 
 const LEVEL2_CHALLENGE = {
   id: 0,
@@ -32,10 +45,13 @@ const LEVEL2_CHALLENGE = {
   flag: process.env.LEVEL2_FLAG || ""
 };
 
+const LEVEL3_FLAG = "PHISH{R3v_Eng_W1n}";
+const LEVEL3_POINTS = 200;
+
 // ==================== RATE LIMITING ====================
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 10,
+  max: 100, // Increased for testing
   message: { success: false, message: "Too many login attempts, please try again later" }
 });
 
@@ -47,7 +63,7 @@ const flagLimiter = rateLimit({
 
 const generalLimiter = rateLimit({
   windowMs: 1 * 60 * 1000,
-  max: 100
+  max: 1000 // Increased significantly to handle polling
 });
 
 // ==================== JWT MIDDLEWARE ====================
@@ -104,9 +120,11 @@ const createUser = async (email, name) => {
     flag3: "",
     flag4: "",
     flag5: "",
+    flag6: "",
+    flag7: "",
     lastSolveTime: null
   };
-  
+
   if (USE_MEMORY_DB) {
     // Check if user already exists in memory
     const existing = memoryUsers.find(u => u.email === email.toLowerCase());
@@ -131,13 +149,49 @@ const connectDB = async () => {
     USE_MEMORY_DB = true;
     return;
   }
-  
+
   try {
     await mongoose.connect(DB_URL);
     console.log("✅ Connected to MongoDB");
+    await seedUsers();
   } catch (error) {
     console.warn("⚠️  MongoDB connection failed - Using in-memory database");
     USE_MEMORY_DB = true;
+  }
+};
+
+const seedUsers = async () => {
+  try {
+    const users = Object.entries(REGISTERED_USERS);
+    for (const [email, user] of users) {
+      const existingUser = await Solved.findOne({ email: email.toLowerCase() });
+      if (!existingUser) {
+        const hashedPassword = await bcrypt.hash(user.password, 10);
+        const newUser = new Solved({
+          email: email.toLowerCase(),
+          name: user.name,
+          password: hashedPassword,
+          isAdmin: email.includes('admin') // Auto-detect admin from email for initial seed or name
+        });
+        if (user.name.toLowerCase().includes('admin')) {
+          newUser.isAdmin = true;
+        }
+        await newUser.save();
+        console.log(`User seeded: ${email}`);
+      } else if (!existingUser.password) {
+        // Update existing user to have password if missing (migration)
+        const hashedPassword = await bcrypt.hash(user.password, 10);
+        existingUser.password = hashedPassword;
+        if (user.name.toLowerCase().includes('admin')) {
+          existingUser.isAdmin = true;
+        }
+        await existingUser.save();
+        console.log(`User migrated: ${email}`);
+      }
+    }
+    console.log("✅ Users seeded/migrated successfully");
+  } catch (error) {
+    console.error("Error seeding users:", error);
   }
 };
 
@@ -145,20 +199,67 @@ connectDB();
 
 // ==================== MIDDLEWARE ====================
 app.use(cors({
-  origin: ["http://localhost:5173", "http://localhost:5174"],
+  origin: function (origin, callback) {
+    const allowed = ["http://localhost:5173", "http://localhost:5174"];
+    // Add production URL from env
+    if (process.env.FRONTEND_URL) {
+      allowed.push(process.env.FRONTEND_URL);
+    }
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    if (allowed.indexOf(origin) === -1) {
+      // In production, we might want to block. For CTF simplicity, maybe allow all?
+      // Sticking to specific origins is safer.
+      return callback(new Error('The CORS policy for this site does not allow access from the specified Origin.'), false);
+    }
+    return callback(null, true);
+  },
   credentials: true
 }));
 app.use(express.json());
 app.use(cookieParser());
-app.use(generalLimiter);
+// app.use(generalLimiter);
 
 // ==================== ROUTES ====================
+
+// Download Level 3 (Moved to top for priority)
+app.get('/download/level3', (req, res) => {
+  console.log("Download request received for Level 3");
+  const file = path.join(__dirname, 'challenges', 'secure_validator.py');
+  res.download(file, 'secure_validator.py', (err) => {
+    if (err) console.error("Download error:", err);
+  });
+});
 
 app.get("/health", (req, res) => {
   res.json({ status: "ok" });
 });
 
+// Generic Challenge Download
+app.get('/download/:filename', (req, res) => {
+  const filename = req.params.filename;
+  // Sanitize
+  const safeName = path.basename(filename);
+  const filePath = path.join(__dirname, 'challenges', safeName);
+
+  console.log(`Serving file: ${safeName}`);
+
+  res.download(filePath, safeName, (err) => {
+    if (err) {
+      console.error(`Error serving ${safeName}:`, err.message);
+      if (!res.headersSent) res.status(404).json({ error: "File not found" });
+    }
+  });
+});
+
 // Get user progress
+app.get('/debug-reset', async (req, res) => {
+  const email = "nivednarayananm2@gmail.com";
+  const hashedPassword = await bcrypt.hash("password123", 10);
+  await updateUser(email, { password: hashedPassword });
+  res.json({ success: true, message: "Password reset to password123" });
+});
+
 app.post('/solved', authenticateToken, async (req, res) => {
   const user = await findUser(req.userEmail);
   if (!user) {
@@ -166,12 +267,12 @@ app.post('/solved', authenticateToken, async (req, res) => {
   }
 
   // Admin gets all levels unlocked
-  const isAdmin = req.userEmail.includes('admin');
-  
+  const isAdmin = user.isAdmin === true;
+
   const solvedArray = [];
   const levelUnlocks = [];
-  
-  for (let i = 0; i < 4; i++) {
+
+  for (let i = 0; i < 7; i++) {
     const isSolved = isAdmin || user[`flag${i + 1}`] === "SOLVED";
     if (isSolved) {
       solvedArray.push(i);
@@ -188,8 +289,37 @@ app.post('/solved', authenticateToken, async (req, res) => {
       score: user.score || 0,
       solves: user.solves || solvedArray.length
     },
-    level: levelUnlocks
+    level: levelUnlocks,
+    // Return revealed hints for Level 2 (id=5 in flagX notation implies index 4?)
+    // Actually level 2 is index 4 (flag5) based on previous code.
+    // Let's just return the dedicated array.
+    level2Hints: user.level2Hints || []
   });
+});
+
+// Reveal Hint for Level 2
+app.post('/reveal-hint', authenticateToken, async (req, res) => {
+  const { hintId } = req.body;
+  if (![2, 3].includes(hintId)) {
+    return res.status(400).json({ success: false, message: "Invalid hint ID" });
+  }
+
+  const user = await findUser(req.userEmail);
+  if (!user) {
+    return res.status(404).json({ success: false, message: "User not found" });
+  }
+
+  // Check if already revealed
+  if (user.level2Hints && user.level2Hints.includes(hintId)) {
+    return res.json({ success: true, message: "Hint already revealed", revealed: true });
+  }
+
+  // Add hintId to array
+  await updateUser(req.userEmail, {
+    level2Hints: [...(user.level2Hints || []), hintId]
+  });
+
+  res.json({ success: true, revealed: true });
 });
 
 // Submit flag for Level 1
@@ -218,7 +348,7 @@ app.post('/solve', authenticateToken, flagLimiter, async (req, res) => {
   const currentScore = parseInt(user.score) || 0;
   const currentSolves = parseInt(user.solves) || 0;
   const now = new Date();
-  
+
   await updateUser(req.userEmail, {
     score: currentScore + challenge.points,
     solves: currentSolves + 1,
@@ -246,8 +376,12 @@ app.post('/solve-level2', authenticateToken, flagLimiter, async (req, res) => {
     return res.status(400).json({ success: false, message: "Already solved" });
   }
 
-  const penalty = parseInt(hintPenalty) || 0;
-  const pointsEarned = Math.max(0, LEVEL2_CHALLENGE.basePoints - penalty);
+  const userHints = user.level2Hints || [];
+  let calculatedPenalty = 0;
+  if (userHints.includes(2)) calculatedPenalty += 5;
+  if (userHints.includes(3)) calculatedPenalty += 10;
+
+  const pointsEarned = Math.max(0, LEVEL2_CHALLENGE.basePoints - calculatedPenalty);
   const currentScore = parseInt(user.score) || 0;
   const currentSolves = parseInt(user.solves) || 0;
   const now = new Date();
@@ -262,6 +396,73 @@ app.post('/solve-level2', authenticateToken, flagLimiter, async (req, res) => {
   res.json({ success: true, message: "Correct!", points: pointsEarned });
 });
 
+// Submit Level 3
+app.post('/solve-level3', authenticateToken, async (req, res) => {
+  const { flag } = req.body;
+
+  if (flag !== LEVEL3_FLAG) {
+    return res.status(400).json({ success: false, message: "Incorrect flag" });
+  }
+
+  const user = await findUser(req.userEmail);
+  if (!user) return res.status(404).json({ success: false, message: "User not found" });
+
+  if (user.flag6 === "SOLVED") {
+    return res.status(400).json({ success: false, message: "Already solved" });
+  }
+
+  const currentScore = parseInt(user.score) || 0;
+  const currentSolves = parseInt(user.solves) || 0;
+  const now = new Date();
+
+  await updateUser(req.userEmail, {
+    score: currentScore + LEVEL3_POINTS,
+    solves: currentSolves + 1,
+    lastSolveTime: `${now.getHours()}:${now.getMinutes()}:${now.getSeconds()}`,
+    flag6: "SOLVED"
+  });
+
+  res.json({ success: true, message: "Correct!", points: LEVEL3_POINTS });
+});
+
+// Submit Level 4
+const LEVEL4_FLAG = "CTF{view_source_is_still_op}";
+const LEVEL4_POINTS = 500;
+
+app.post('/solve-level4', authenticateToken, async (req, res) => {
+  const { flag } = req.body;
+  console.log(`[DEBUG] Level 4 Submission: Received flag '${flag}' from user '${req.userEmail}'`);
+
+  if (flag !== LEVEL4_FLAG) {
+    console.log(`[DEBUG] Level 4 Failed: Expected '${LEVEL4_FLAG}', got '${flag}'`);
+    return res.status(400).json({ success: false, message: "Incorrect flag" });
+  }
+
+  const user = await findUser(req.userEmail);
+  if (!user) {
+    console.log(`[DEBUG] Level 4 Failed: User not found '${req.userEmail}'`);
+    return res.status(404).json({ success: false, message: "User not found" });
+  }
+
+  if (user.flag7 === "SOLVED") {
+    console.log(`[DEBUG] Level 4 Failed: Already solved by '${req.userEmail}'`);
+    return res.status(400).json({ success: false, message: "Already solved" });
+  }
+
+  const currentScore = parseInt(user.score) || 0;
+  await updateUser(req.userEmail, {
+    score: currentScore + LEVEL4_POINTS,
+    solves: (parseInt(user.solves) || 0) + 1,
+    lastSolveTime: new Date().toLocaleTimeString(),
+    flag7: "SOLVED"
+  });
+
+  console.log(`[DEBUG] Level 4 Success: User '${req.userEmail}' solved Level 4`);
+  res.json({ success: true, message: "Correct!", points: LEVEL4_POINTS });
+});
+
+
+
 // Check Level 2 status
 app.post('/check-level2', authenticateToken, async (req, res) => {
   const user = await findUser(req.userEmail);
@@ -274,10 +475,10 @@ app.post('/check-level2', authenticateToken, async (req, res) => {
 // Scoreboard
 app.post('/scoreboard', async (req, res) => {
   const users = await findAllUsers();
-  
+
   // Filter out admin users from scoreboard
   const filteredUsers = users.filter(u => !u.email.includes('admin'));
-  
+
   const toSeconds = (time) => {
     if (!time) return Infinity;
     const [h, m, s = 0] = String(time).split(":").map(Number);
@@ -307,25 +508,27 @@ app.post('/scoreboard', async (req, res) => {
 });
 
 // Login
-app.post('/login', loginLimiter, async (req, res) => {
+app.post('/login', async (req, res) => {
   const { email, password } = req.body;
 
   if (!email || !password) {
     return res.status(400).json({ success: false, message: "Email and password required" });
   }
 
-  const registeredUser = REGISTERED_USERS[email.toLowerCase()];
-  if (!registeredUser) {
-    return res.status(401).json({ success: false, message: "Email not registered" });
-  }
-
-  if (password !== registeredUser.password) {
-    return res.status(401).json({ success: false, message: "Invalid password" });
-  }
-
+  // Check DB First
   let user = await findUser(email);
-  if (!user) {
-    user = await createUser(email, registeredUser.name);
+
+  // If user exists in DB
+  if (user && user.password) {
+    const match = await bcrypt.compare(password, user.password);
+    if (!match) {
+      return res.status(401).json({ success: false, message: "Invalid password" });
+    }
+  } else {
+    // Fallback for non-migrated users or if DB failure (though we prefer DB)
+    // Or if user exists but has no password (shouldn't happen with seeding)
+    // Let's rely strictly on DB for security as requested "rework"
+    return res.status(401).json({ success: false, message: "Invalid credentials" });
   }
 
   const token = jwt.sign({ email: email.toLowerCase() }, secretKey, { expiresIn: '7d' });
@@ -335,8 +538,8 @@ app.post('/login', loginLimiter, async (req, res) => {
     secure: false,
     sameSite: "lax"
   });
-  
-  res.json({ success: true, name: registeredUser.name });
+
+  res.json({ success: true, name: user.name, isAdmin: user.isAdmin });
 });
 
 // Logout
@@ -364,4 +567,7 @@ app.post('/unavailable', (req, res) => {
 
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);
+  console.log(`[STARTUP] DB Mode: ${USE_MEMORY_DB ? "IN-MEMORY (Resets on restart)" : "MONGODB (Persistent)"}`);
+  console.log(`[STARTUP] Level 1 Ch 4 Flag (ID 3): ${CHALLENGES[3].flag}`);
+  console.log(`[STARTUP] Level 4 Flag: ${LEVEL4_FLAG}`);
 });

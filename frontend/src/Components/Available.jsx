@@ -30,9 +30,9 @@ const Available = () => {
         }
         return char;
       }).join('');
-      
+
       setGlitchText(glitched);
-      
+
       setTimeout(() => {
         setGlitchText(original);
       }, 50);
@@ -50,7 +50,7 @@ const Available = () => {
         <div className="glow-orb orb-1"></div>
         <div className="glow-orb orb-2"></div>
         <div className="glow-orb orb-3"></div>
-        
+
         {/* Floating Error Codes */}
         <div className="error-codes">
           {['503', 'ERR', '404', 'OFFLINE', 'MAINT'].map((code, i) => (
@@ -80,7 +80,7 @@ const Available = () => {
             </div>
             <div className="warning-pulse"></div>
           </div>
-          <h1 className="site-title">Phisherman 2.0</h1>
+          <h1 className="site-title">Phishermen 2.0</h1>
         </div>
 
         {/* Main Alert Box */}
@@ -88,11 +88,11 @@ const Available = () => {
           <div className="alert-icon-wrapper">
             <AlertTriangle className="alert-icon" />
           </div>
-          
+
           <h2 className="glitch-title" data-text={glitchText}>
             {glitchText}
           </h2>
-          
+
           <p className="alert-message">
             Our CTF platform is currently undergoing scheduled maintenance to bring you enhanced security features and new challenges. We'll be back online soon!
           </p>
@@ -135,7 +135,7 @@ const Available = () => {
         </div>
 
 
-    
+
       </div>
     </div>
   );

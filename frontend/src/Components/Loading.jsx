@@ -1,9 +1,9 @@
 import '../styles/Loading.css'
 import { Shield, Lock, Unlock, Zap, Terminal, Code, Database, Server } from 'lucide-react';
-import { useState,useEffect } from 'react';
+import { useState, useEffect } from 'react';
 
 
-const Loading=()=> {
+const Loading = () => {
     const [progress, setProgress] = useState(0);
     const [loadingStage, setLoadingStage] = useState(0);
     const [dots, setDots] = useState('');
@@ -133,7 +133,7 @@ const Loading=()=> {
 
                 {/* Title */}
                 <h1 className="loader-title">
-                    <span className="title-strike">Phisherman</span>
+                    <span className="title-strike">Phishermen</span>
                     <span className="title-ctf">2.0</span>
                 </h1>
 

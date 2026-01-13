@@ -2,18 +2,20 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Lock, Unlock, Trophy, Star, Zap, Shield, Terminal, Code, Network, Database, Globe, FileSearch } from 'lucide-react';
 import '../styles/Levels.css';
+import config from '../config';
 
 const Levels = ({ leveling }) => {
   const navigate = useNavigate();
   const [isAdmin, setIsAdmin] = useState(false);
   const [level1Complete, setLevel1Complete] = useState(false);
   const [level2Complete, setLevel2Complete] = useState(false);
+  const [level3Complete, setLevel3Complete] = useState(false);
 
   // Check admin status and level completion
   useEffect(() => {
     async function checkStatus() {
       try {
-        const res = await fetch("http://localhost:3000/checklogin", {
+        const res = await fetch(`${config.API_BASE_URL}/checklogin`, {
           method: "POST",
           credentials: "include",
           headers: { "Content-Type": "application/json" }
@@ -34,7 +36,7 @@ const Levels = ({ leveling }) => {
 
     async function checkLevel2() {
       try {
-        const res = await fetch("http://localhost:3000/check-level2", {
+        const res = await fetch(`${config.API_BASE_URL}/check-level2`, {
           method: "POST",
           credentials: "include",
           headers: { "Content-Type": "application/json" }
@@ -57,6 +59,12 @@ const Levels = ({ leveling }) => {
     if (leveling && leveling.length >= 4) {
       const allComplete = leveling[0] && leveling[1] && leveling[2] && leveling[3];
       setLevel1Complete(allComplete);
+
+      // Index 4 is Level 2 (flag5)
+      // Index 5 is Level 3 (flag6)
+      if (leveling[5]) {
+        setLevel3Complete(true);
+      }
     }
   }, [leveling]);
 
@@ -89,29 +97,29 @@ const Levels = ({ leveling }) => {
     },
     {
       id: 3,
-      title: "Level 3 - Coming Soon",
+      title: "Level 3 - Reverse Engineering",
       category: "advanced",
       difficulty: "Hard",
-      points: "???",
-      totalChallenges: "?",
-      locked: true,  // Coming soon - always locked
-      completed: false,
-      description: "Advanced challenges await... Stay tuned!",
-      icon: Globe,
-      route: null
+      points: "200",
+      totalChallenges: 1,
+      locked: !level2Complete && !isAdmin, // Unlocks after Level 2
+      completed: leveling[5] || false,     // Assuming solved[5] is flag6. Wait. 'leveling' logic.
+      description: "Analyze a secure validator script and reverse-engineer the logic to forge a valid license key.",
+      icon: Terminal,
+      route: '/level3'
     },
     {
       id: 4,
-      title: "Level 4 - Master Challenge",
+      title: "Level 4 - The Source",
       category: "expert",
       difficulty: "Expert",
-      points: "???",
-      totalChallenges: "?",
-      locked: true,  // Coming soon - always locked
-      completed: false,
-      description: "The ultimate test of your skills. Are you ready?",
+      points: "500",
+      totalChallenges: 1,
+      locked: !level3Complete && !isAdmin,
+      completed: leveling[6] || false,
+      description: "The ultimate test of your skills. Follow the trail to the source.",
       icon: Shield,
-      route: null
+      route: '/level4'
     }
   ];
 
@@ -277,5 +285,6 @@ const Levels = ({ leveling }) => {
     </div>
   );
 };
+
 
 export default Levels;

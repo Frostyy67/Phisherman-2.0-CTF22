@@ -11,13 +11,9 @@ const Level2 = ({ userInfo, level2Solved }) => {
   const [submitting, setSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [showConfetti, setShowConfetti] = useState(false);
-  
-  // Hint system
-  const [hint2Revealed, setHint2Revealed] = useState(false);
-  const [hint3Revealed, setHint3Revealed] = useState(false);
-  const [hintPenalty, setHintPenalty] = useState(0);
-  const [showHint2Confirm, setShowHint2Confirm] = useState(false);
-  const [showHint3Confirm, setShowHint3Confirm] = useState(false);
+
+  // Hints removed, penalty is always 0
+  const hintPenalty = 0;
 
   const challenge = {
     title: "SQL Injection - Juice Shop",
@@ -27,9 +23,7 @@ const Level2 = ({ userInfo, level2Solved }) => {
     description: "Welcome to Level 2! Your target is the OWASP Juice Shop - a deliberately vulnerable web application. Your mission is to exploit SQL injection vulnerabilities to discover hidden products and retrieve the flag.",
     targetUrl: "http://20.40.47.118:3000/#/",
     hints: {
-      hint1: "Search is more powerful than you think.",
-      hint2: "What if the website believes something true or false?",
-      hint3: "Try adding symbols instead of words."
+      hint1: "Search is more powerful than you think."
     }
   };
 
@@ -42,7 +36,7 @@ const Level2 = ({ userInfo, level2Solved }) => {
   useEffect(() => {
     async function checklogin() {
       try {
-        const res = await fetch("http://localhost:3000/checklogin", {
+        const res = await fetch(`${config.API_BASE_URL}/checklogin`, {
           method: "POST",
           credentials: "include",
           headers: { "Content-Type": "application/json" }
@@ -58,18 +52,6 @@ const Level2 = ({ userInfo, level2Solved }) => {
     checklogin();
   }, [navigate]);
 
-  const revealHint2 = () => {
-    setHint2Revealed(true);
-    setHintPenalty(prev => prev + 5);
-    setShowHint2Confirm(false);
-  };
-
-  const revealHint3 = () => {
-    setHint3Revealed(true);
-    setHintPenalty(prev => prev + 10);
-    setShowHint3Confirm(false);
-  };
-
   const handleSubmit = async () => {
     if (!inputValue.trim()) {
       setErrorMessage("Please enter a flag");
@@ -80,13 +62,13 @@ const Level2 = ({ userInfo, level2Solved }) => {
     setErrorMessage('');
 
     try {
-      const res = await fetch("http://localhost:3000/solve-level2", {
+      const res = await fetch(`${config.API_BASE_URL}/solve-level2`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ 
-          flag: inputValue.trim(),
-          hintPenalty: hintPenalty
+        body: JSON.stringify({
+          flag: inputValue.trim()
+          // Hint penalty is now calculated server-side
         })
       });
 
@@ -193,23 +175,40 @@ const Level2 = ({ userInfo, level2Solved }) => {
             {/* Target Link */}
             <div className="target-section">
               <h4 className="section-title">TARGET</h4>
-              <a 
-                href={challenge.targetUrl} 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="target-link"
-              >
+              <div className="section-text" style={{
+                background: 'rgba(255,255,255,0.1)',
+                padding: '12px',
+                borderRadius: '8px',
+                fontFamily: 'monospace',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '10px'
+              }}>
                 <ExternalLink size={18} />
-                <span>Open Juice Shop</span>
-              </a>
-              <p className="target-note">Opens in a new tab - Explore and exploit!</p>
+                <a
+                  href={challenge.targetUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="target-link"
+                  style={{
+                    color: '#fff',
+                    textDecoration: 'none',
+                    cursor: 'pointer',
+                    position: 'relative',
+                    zIndex: 50
+                  }}
+                >
+                  {challenge.targetUrl}
+                  <ExternalLink size={16} style={{ marginLeft: '8px' }} />
+                </a>
+              </div>
             </div>
 
             {/* Hints Section */}
             <div className="hints-section">
               <h4 className="section-title">HINTS</h4>
               <p className="hint-note">Flag format: PHISH{"{____}"}</p>
-              
+
               {/* Hint 1 - Always visible */}
               <div className="hint-box hint-free">
                 <div className="hint-header">
@@ -217,60 +216,6 @@ const Level2 = ({ userInfo, level2Solved }) => {
                   <span className="hint-cost free">FREE</span>
                 </div>
                 <code className="hint-code">{challenge.hints.hint1}</code>
-              </div>
-
-              {/* Hint 2 - Costs 5 points */}
-              <div className={`hint-box hint-paid ${hint2Revealed ? 'revealed' : ''}`}>
-                <div className="hint-header">
-                  <span className="hint-label">Hint 2</span>
-                  <span className="hint-cost paid">-5 points</span>
-                </div>
-                {hint2Revealed ? (
-                  <code className="hint-code">{challenge.hints.hint2}</code>
-                ) : (
-                  <div className="hint-locked">
-                    {showHint2Confirm ? (
-                      <div className="hint-confirm">
-                        <AlertTriangle size={16} />
-                        <span>This will cost 5 points. Reveal?</span>
-                        <button className="confirm-yes" onClick={revealHint2}>Yes</button>
-                        <button className="confirm-no" onClick={() => setShowHint2Confirm(false)}>No</button>
-                      </div>
-                    ) : (
-                      <button className="reveal-hint-btn" onClick={() => setShowHint2Confirm(true)}>
-                        <Eye size={16} />
-                        <span>Reveal Hint (-5 pts)</span>
-                      </button>
-                    )}
-                  </div>
-                )}
-              </div>
-
-              {/* Hint 3 - Costs 10 points */}
-              <div className={`hint-box hint-paid ${hint3Revealed ? 'revealed' : ''}`}>
-                <div className="hint-header">
-                  <span className="hint-label">Hint 3</span>
-                  <span className="hint-cost paid">-10 points</span>
-                </div>
-                {hint3Revealed ? (
-                  <code className="hint-code">{challenge.hints.hint3}</code>
-                ) : (
-                  <div className="hint-locked">
-                    {showHint3Confirm ? (
-                      <div className="hint-confirm">
-                        <AlertTriangle size={16} />
-                        <span>This will cost 10 points. Reveal?</span>
-                        <button className="confirm-yes" onClick={revealHint3}>Yes</button>
-                        <button className="confirm-no" onClick={() => setShowHint3Confirm(false)}>No</button>
-                      </div>
-                    ) : (
-                      <button className="reveal-hint-btn" onClick={() => setShowHint3Confirm(true)}>
-                        <Eye size={16} />
-                        <span>Reveal Hint (-10 pts)</span>
-                      </button>
-                    )}
-                  </div>
-                )}
               </div>
             </div>
 

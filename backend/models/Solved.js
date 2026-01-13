@@ -17,7 +17,12 @@ const solvedSchema = new Schema({
     flag3: { type: String, default: "" },
     flag4: { type: String, default: "" },
     flag5: { type: String, default: "" },
-    lastSolveTime: String
+    flag6: { type: String, default: "" },
+    flag7: { type: String, default: "" },
+    lastSolveTime: String,
+    password: { type: String },
+    isAdmin: { type: Boolean, default: false },
+    level2Hints: { type: [Number], default: [] }
 });
 
 export const Solved = mongoose.model('Solved', solvedSchema)

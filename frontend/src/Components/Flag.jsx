@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Trophy, Lock, Unlock, CheckCircle, XCircle, Target, Brain, Code, Shield } from 'lucide-react';
 import '../styles/Flag.css';
 import { useNavigate } from 'react-router-dom';
+import config from '../config';
 
 const Flag = ({ flags, points, score }) => {
   const delay = (t) =>
@@ -38,7 +39,8 @@ const Flag = ({ flags, points, score }) => {
       icon: Code,
       description: "A classified document has been intercepted containing an encoded message. Your mission is to decode it and retrieve the hidden flag.",
       hint: "This encoding uses exactly 64 characters. Think Base...",
-      color: "cyan-blue"
+      color: "cyan-blue",
+      file: "challenge1_secret.txt"
     },
     {
       id: 1,
@@ -48,8 +50,9 @@ const Flag = ({ flags, points, score }) => {
       points: 500,
       icon: Shield,
       description: "SecureBank's employee portal has a vulnerability. Bypass the authentication to gain admin access and retrieve the flag.",
-      hint: "What if the username field doesn't properly sanitize quotes? Try: ' OR '1'='1' --",
-      color: "purple-pink"
+      hint: "What if the username field doesn't properly sanitize quotes?",
+      color: "purple-pink",
+      file: "challenge2_login.html"
     },
     {
       id: 2,
@@ -60,7 +63,8 @@ const Flag = ({ flags, points, score }) => {
       icon: Brain,
       description: "A license validation program has been captured. Analyze the source code to find the hidden license key (flag) embedded in the hex data.",
       hint: "Each hex value represents an ASCII character. 0x43='C', 0x54='T'... Use chr() in Python!",
-      color: "orange-red"
+      color: "orange-red",
+      file: "challenge3_crackme.py"
     },
     {
       id: 3,
@@ -69,16 +73,17 @@ const Flag = ({ flags, points, score }) => {
       difficulty: "Expert",
       points: 450,
       icon: Target,
-      description: "An encrypted communication between threat actors has been intercepted. Decrypt the message to uncover the secret flag.",
-      hint: "ROT13 shifts each letter by 13 positions. A→N, B→O... It's symmetric!",
-      color: "green-emerald"
+      description: "We intercepted suspicious network traffic. The message appears to be encrypted using a simple cipher. Decrypt it to find the flag.",
+      hint: "Really? U want hint at this level?",
+      color: "green-emerald",
+      file: "challenge4_forensics.txt"
     }
   ];
 
   // SECURITY: Server-side flag validation
   const handleSubmit = async (challengeId) => {
     const userInput = inputValues[challengeId] || '';
-    
+
     if (!userInput.trim()) {
       setErrorMessages(prev => ({ ...prev, [challengeId]: "Please enter a flag" }));
       return;
@@ -88,14 +93,14 @@ const Flag = ({ flags, points, score }) => {
     setErrorMessages(prev => ({ ...prev, [challengeId]: null }));
 
     try {
-      const res = await fetch("http://localhost:3000/solve", {
+      const res = await fetch(`${config.API_BASE_URL}/solve`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
         },
         credentials: "include",
-        body: JSON.stringify({ 
-          id: challengeId, 
+        body: JSON.stringify({
+          id: challengeId,
           flag: userInput.trim()
         })
       });
@@ -133,7 +138,7 @@ const Flag = ({ flags, points, score }) => {
     async function checklogin() {
 
       try {
-        const res = await fetch("http://localhost:3000/checklogin", {
+        const res = await fetch(`${config.API_BASE_URL}/checklogin`, {
           method: "POST",
           credentials: "include",
           headers: {
@@ -196,16 +201,16 @@ const Flag = ({ flags, points, score }) => {
               <div className="stat-label">Total Challenges</div>
             </div>
             <div className="stat-card stat-green">
-              <div className="stat-value">{Object.keys(solvedChallenges).length}</div>
+              <div className="stat-value">{challenges.filter(c => solvedChallenges[c.id]).length}</div>
               <div className="stat-label">Solved</div>
             </div>
             <div className="stat-card stat-purple">
-              <div className="stat-value">{challenges.length - Object.keys(solvedChallenges).length}</div>
+              <div className="stat-value">{challenges.length - challenges.filter(c => solvedChallenges[c.id]).length}</div>
               <div className="stat-label">Remaining</div>
             </div>
             <div className="stat-card stat-yellow">
               <div className="stat-value">
-                {challenges.length > 0 ? Math.round((Object.keys(solvedChallenges).length / challenges.length) * 100) : 0}%
+                {challenges.length > 0 ? Math.round((challenges.filter(c => solvedChallenges[c.id]).length / challenges.length) * 100) : 0}%
               </div>
               <div className="stat-label">Completion</div>
             </div>
@@ -258,6 +263,32 @@ const Flag = ({ flags, points, score }) => {
                     </div>
 
                     <div className="hint-box">
+                      <h4 className="section-title">RESOURCES</h4>
+                      <button
+                        className="download-button"
+                        style={{
+                          position: 'relative',
+                          zIndex: 50,
+                          width: '100%',
+                          marginBottom: '10px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '10px'
+                        }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          window.location.href = `${config.API_BASE_URL}/download/${challenge.file}`;
+                        }}
+                      >
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                          <polyline points="7 10 12 15 17 10"></polyline>
+                          <line x1="12" y1="15" x2="12" y2="3"></line>
+                        </svg>
+                        Download Challenge File
+                      </button>
+
                       <h4 className="section-title">HINT</h4>
                       <code className="hint-code">{challenge.hint}</code>
                     </div>

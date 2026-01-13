@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom'
 
 
 const Score = () => {
-  const navigate=useNavigate()
+  const navigate = useNavigate()
   const [teams, setTeams] = useState([]);
   const [total_solves, setsolve] = useState(0)
   const [activePlayers, setplayers] = useState(0)
@@ -54,7 +54,7 @@ const Score = () => {
     async function checklogin() {
 
       try {
-        const res = await fetch("http://localhost:3000/unavailable", {
+        const res = await fetch(`${config.API_BASE_URL}/unavailable`, {
           method: "POST",
           credentials: "include",
           headers: {
@@ -63,10 +63,10 @@ const Score = () => {
         });
 
         const response = await res.json();
-        if (response.success == true){
+        if (response.success == true) {
           navigate('/scoreboard')
         }
-        else{
+        else {
           navigate('/unavailable')
         }
       } catch (err) {
