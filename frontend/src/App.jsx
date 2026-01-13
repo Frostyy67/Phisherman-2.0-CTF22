@@ -1,6 +1,7 @@
 import { createBrowserRouter, RouterProvider } from 'react-router-dom'
 import Levels from './Components/Levels'
 import Flag from './Components/Flag'
+import Level2 from './Components/Level2'
 import Available from './Components/Available'
 import Navbar from './Components/Navbar'
 import Score from './Components/Score'
@@ -56,7 +57,6 @@ function App() {
         const res = await fetch("http://localhost:3000/health", { method: "GET" });
         if (res.ok) {
           setload(false)
-          await tool();
           clearInterval(interval);
         }
       } catch { }
@@ -78,6 +78,10 @@ function App() {
     {
       path: "/flags",
       element: <><Navbar points={info.points} username={info.name} /><Flag flags={solved} points={info.points} score={info.score}/></>
+    },
+    {
+      path: "/level2",
+      element: <><Navbar points={info.points} username={info.name} /><Level2 /></>
     },
     {
       path: '/scoreboard',

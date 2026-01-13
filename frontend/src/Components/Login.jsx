@@ -29,26 +29,30 @@ const Login = () => {
   }
 
   async function onsubmit(newdata) {
-    const res = await fetch("http://localhost:3000/login", {
-      method: "POST",
-      credentials:"include",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(newdata)
-    });
-    const response = await res.json()
-    await delay(2)
-    if (response.success == true) {
-      navigate('/')
-    }
-    else {
-      setError("email", {
-        type: "manual",
-        message: "This gmail is didnt registered!",
+    try {
+      const res = await fetch("http://localhost:3000/login", {
+        method: "POST",
+        credentials:"include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: newdata.email, password: newdata.password })
+      });
+      const response = await res.json()
+      await delay(1)
+      if (response.success == true) {
+        navigate('/')
+      }
+      else {
+        setError("password", {
+          type: "manual",
+          message: response.message || "Invalid credentials",
+        });
+      }
+    } catch (err) {
+      setError("password", {
+        type: "manual", 
+        message: "Connection error. Please try again.",
       });
     }
-
-
-
   }
 
 
@@ -148,37 +152,12 @@ const Login = () => {
                 <Sparkles className="logo-sparkle sparkle-2" />
                 <Sparkles className="logo-sparkle sparkle-3" />
               </div>
-              <h1 className="login-title">Phsiherman 2.0</h1>
-              <p className="login-subtitle">Enter your registered email ID</p>
+              <h1 className="login-title">Phisherman 2.0</h1>
+              <p className="login-subtitle">Enter your credentials to access the CTF</p>
             </div>
 
             {/* Form */}
             <form className="login-form" onSubmit={handleSubmit(onsubmit)}>
-              {/* Username Field */}
-              <div className={`form-group ${focusedField === 'username' ? 'focused' : ''}`}>
-                <label htmlFor="username" className="form-label">
-                  <User className="label-icon" />
-                  Username
-                </label>
-                <div className="input-wrapper">
-                  <input
-                    type="text"
-                    id="username"
-                    name="username"
-                    {...register("username", {
-                      required: { value: true, message: "The field is required" },
-                      minLength: { value: 5, message: "The length of the username is too short" }
-                    })}
-                    placeholder="Enter your username"
-                    className="form-input"
-                  />
-                  <div className="input-border"></div>
-                  <div className="input-glow"></div>
-                </div>
-                {errors.username && <div style={{ color: '#00ff41',padding:10 }}>{errors.username.message}</div>}
-              </div>
-
-
               {/* Email Field */}
               <div className={`form-group ${focusedField === 'email' ? 'focused' : ''}`}>
                 <label htmlFor="email" className="form-label">
@@ -190,40 +169,39 @@ const Login = () => {
                     type="email"
                     id="email"
                     {...register("email", {
-                      required: { value: true, message: "The field is required" },
+                      required: { value: true, message: "Email is required" },
                       pattern: { value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/, message: "Invalid email address" }
                     })}
-                    placeholder="Enter your email"
+                    placeholder="Enter your registered email"
                     className="form-input"
                   />
                   <div className="input-border"></div>
                   <div className="input-glow"></div>
                 </div>
-                {errors.email && <div style={{ color: '#00ff41',padding:10 }}>{errors.email.message}</div>}
+                {errors.email && <div style={{ color: '#ff4444', padding: 10 }}>{errors.email.message}</div>}
               </div>
 
-              <div className={`form-group ${focusedField === 'username' ? 'focused' : ''}`}>
-                <label htmlFor="username" className="form-label">
-                  <User className="label-icon" />
-                  Avatar
+              {/* Password Field */}
+              <div className={`form-group ${focusedField === 'password' ? 'focused' : ''}`}>
+                <label htmlFor="password" className="form-label">
+                  <Lock className="label-icon" />
+                  Password
                 </label>
                 <div className="input-wrapper">
                   <input
-                    type="text"
-                    id="avatar"
-                    name='avatar'
-                    {...register("avatar", {
-                      required: { value: true, message: "The field is required" },
-                      minLength: { value: 2, message: "The length of Avater should be 2" },
-                      maxLength: { value: 2, message: "The length of Avater should be 2" }
+                    type="password"
+                    id="password"
+                    {...register("password", {
+                      required: { value: true, message: "Password is required" },
+                      minLength: { value: 4, message: "Password too short" }
                     })}
-                    placeholder="Enter Avatar"
+                    placeholder="Enter your password"
                     className="form-input"
                   />
                   <div className="input-border"></div>
                   <div className="input-glow"></div>
                 </div>
-                {errors.avatar && <div style={{ color: '#00ff41',padding:10 }}>{errors.avatar.message}</div>}
+                {errors.password && <div style={{ color: '#ff4444', padding: 10 }}>{errors.password.message}</div>}
               </div>
 
               {/* Submit Button */}

@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>SecureBank™ - Employee Login Portal</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 0;
+            color: #fff;
+        }
+        .login-container {
+            background: rgba(255,255,255,0.1);
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+            width: 350px;
+        }
+        h1 { text-align: center; color: #00ff88; }
+        input {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            border: none;
+            border-radius: 5px;
+            background: rgba(255,255,255,0.2);
+            color: #fff;
+            box-sizing: border-box;
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            background: #00ff88;
+            border: none;
+            border-radius: 5px;
+            color: #000;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        button:hover { background: #00cc6a; }
+        .error { color: #ff4444; text-align: center; margin-top: 10px; }
+        .success { color: #00ff88; text-align: center; margin-top: 10px; font-size: 14px; }
+        .hint { color: #888; font-size: 12px; margin-top: 20px; text-align: center; }
+        /* Developer Note: Remove before production! */
+        /* Backend query: SELECT * FROM users WHERE username='$user' AND password='$pass' */
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <h1>🏦 SecureBank™</h1>
+        <h3 style="text-align:center; color:#aaa;">Employee Portal</h3>
+        
+        <form id="loginForm">
+            <input type="text" id="username" placeholder="Username" required>
+            <input type="password" id="password" placeholder="Password" required>
+            <button type="submit">LOGIN</button>
+        </form>
+        
+        <div id="message"></div>
+        
+        <div class="hint">
+            🔒 Authorized Personnel Only<br>
+            <small>Hint: Sometimes the best passwords are no passwords at all...</small>
+        </div>
+    </div>
+
+    <script>
+        // Simulated vulnerable SQL backend
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const messageDiv = document.getElementById('message');
+            
+            // Simulated SQL Injection vulnerability
+            // Real query would be: SELECT * FROM users WHERE username='$username' AND password='$password'
+            
+            // Check for SQL injection patterns
+            const sqlInjectionPatterns = [
+                "' OR '1'='1",
+                "' OR 1=1--",
+                "' OR ''='",
+                "admin'--",
+                "' OR '1'='1'--",
+                "' OR 'x'='x",
+                "1' OR '1'='1",
+            ];
+            
+            let injectionDetected = false;
+            for (let pattern of sqlInjectionPatterns) {
+                if (username.toLowerCase().includes(pattern.toLowerCase()) || 
+                    password.toLowerCase().includes(pattern.toLowerCase())) {
+                    injectionDetected = true;
+                    break;
+                }
+            }
+            
+            if (injectionDetected) {
+                messageDiv.innerHTML = `
+                    <div class="success">
+                        ✅ Authentication Bypassed!<br><br>
+                        <strong>Welcome, Administrator!</strong><br><br>
+                        🚩 FLAG: <code style="background:#000;padding:5px;">CTF{sql_1nj3ct10n_m4st3r_2024}</code>
+                    </div>
+                `;
+            } else if (username === 'admin' && password === 'admin123') {
+                messageDiv.innerHTML = '<div class="success">Welcome admin! (But this isn\'t the challenge...)</div>';
+            } else {
+                messageDiv.innerHTML = '<div class="error">❌ Invalid credentials. Try SQL injection!</div>';
+            }
+        });
+    </script>
+</body>
+</html>

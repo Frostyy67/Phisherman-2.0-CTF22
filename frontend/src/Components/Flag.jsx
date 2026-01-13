@@ -1,29 +1,43 @@
 import { useState, useEffect } from 'react';
-import { Trophy, Lock, CheckCircle, XCircle, Target, Brain, Code, Shield } from 'lucide-react';
+import { Trophy, Lock, Unlock, CheckCircle, XCircle, Target, Brain, Code, Shield } from 'lucide-react';
 import '../styles/Flag.css';
 import { useNavigate } from 'react-router-dom';
 
-const Flag = ({ flags, points,score }) => {
+const Flag = ({ flags, points, score }) => {
   const delay = (t) =>
     new Promise(resolve => setTimeout(resolve, t * 1000));
   const navigate = useNavigate()
-  const [submissions, setSubmissions] = useState(flags)
-  const [inputValues, setInputValues] = useState(flags);
-  const [solvedChallenges, setSolvedChallenges] = useState(flags);
-
+  const [submissions, setSubmissions] = useState({})
+  const [inputValues, setInputValues] = useState({});
+  const [solvedChallenges, setSolvedChallenges] = useState({});
+  const [submitting, setSubmitting] = useState({});
+  const [errorMessages, setErrorMessages] = useState({});
   const [showConfetti, setShowConfetti] = useState(false);
 
+  // Initialize solved state from props
+  useEffect(() => {
+    if (flags && Array.isArray(flags)) {
+      const solved = {};
+      flags.forEach((flagId) => {
+        if (flagId !== undefined && flagId !== null) {
+          solved[flagId] = true;
+        }
+      });
+      setSolvedChallenges(solved);
+    }
+  }, [flags]);
+
+  // SECURITY: Flags are NOT stored here - only challenge metadata
   const challenges = [
     {
       id: 0,
-      title: "The Hidden Message",
+      title: "Basic Level - The Hidden Message",
       category: "Cryptography",
       difficulty: "Easy",
       points: 100,
       icon: Code,
-      description: "Decode this Base64 encoded message to find the flag.",
-      hint: "The message is: SGVsbG9fQ1RGX1BsYXllcnsxbV9hX2JBczY0X2V4cDNydH0=",
-      flag: "Hello_CTF_Player{1m_a_bAs64_exp3rt}",
+      description: "A classified document has been intercepted containing an encoded message. Your mission is to decode it and retrieve the hidden flag.",
+      hint: "This encoding uses exactly 64 characters. Think Base...",
       color: "cyan-blue"
     },
     {
@@ -33,9 +47,8 @@ const Flag = ({ flags, points,score }) => {
       difficulty: "Medium",
       points: 500,
       icon: Shield,
-      description: "Bypass the authentication by finding the correct SQL injection payload.",
-      hint: "Username: admin' OR '1'='1' --",
-      flag: "CTF{sql_1nj3ct10n_m4st3r_2024}",
+      description: "SecureBank's employee portal has a vulnerability. Bypass the authentication to gain admin access and retrieve the flag.",
+      hint: "What if the username field doesn't properly sanitize quotes? Try: ' OR '1'='1' --",
       color: "purple-pink"
     },
     {
@@ -45,9 +58,8 @@ const Flag = ({ flags, points,score }) => {
       difficulty: "Hard",
       points: 300,
       icon: Brain,
-      description: "The password is hidden in plain sight. Look at the hex values: 0x43 0x54 0x46 0x7B 0x72 0x33 0x76 0x33 0x72 0x73 0x33 0x5F 0x6D 0x61 0x73 0x74 0x33 0x72 0x7D",
-      hint: "Convert hex to ASCII characters",
-      flag: "CTF{r3v3rs3_mast3r}",
+      description: "A license validation program has been captured. Analyze the source code to find the hidden license key (flag) embedded in the hex data.",
+      hint: "Each hex value represents an ASCII character. 0x43='C', 0x54='T'... Use chr() in Python!",
       color: "orange-red"
     },
     {
@@ -57,44 +69,58 @@ const Flag = ({ flags, points,score }) => {
       difficulty: "Expert",
       points: 450,
       icon: Target,
-      description: "Analyze this packet: The flag is ROT13 encrypted. Encrypted: PGS{argjbex_sberfavpf_ceb}",
-      hint: "ROT13 shifts each letter by 13 positions",
-      flag: "CTF{network_forensics_pro}",
+      description: "An encrypted communication between threat actors has been intercepted. Decrypt the message to uncover the secret flag.",
+      hint: "ROT13 shifts each letter by 13 positions. A→N, B→O... It's symmetric!",
       color: "green-emerald"
     }
   ];
 
-  const handleSubmit = async (challengeId, flag) => {
-    const challenge = challenges.find(c => c.id === challengeId);
+  // SECURITY: Server-side flag validation
+  const handleSubmit = async (challengeId) => {
     const userInput = inputValues[challengeId] || '';
+    
+    if (!userInput.trim()) {
+      setErrorMessages(prev => ({ ...prev, [challengeId]: "Please enter a flag" }));
+      return;
+    }
 
-    if (userInput.trim() === challenge.flag) {
-      if (!solvedChallenges[challengeId]) {
+    setSubmitting(prev => ({ ...prev, [challengeId]: true }));
+    setErrorMessages(prev => ({ ...prev, [challengeId]: null }));
+
+    try {
+      const res = await fetch("http://localhost:3000/solve", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        credentials: "include",
+        body: JSON.stringify({ 
+          id: challengeId, 
+          flag: userInput.trim()
+        })
+      });
+
+      const response = await res.json();
+
+      if (response.success) {
         setSolvedChallenges(prev => ({ ...prev, [challengeId]: true }));
         setSubmissions(prev => ({ ...prev, [challengeId]: 'correct' }));
         setShowConfetti(true);
-        const res = await fetch("http://localhost:3000/solve", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          credentials: "include",
-          body: JSON.stringify({ id: challengeId, flag: challenges[challengeId].flag, points: points,current_score:score,new_score:challenges[challengeId].points })
-        })
-        const response = await res.json()
         setTimeout(() => setShowConfetti(false), 3000);
-        await delay(4)
-        if (response.success == true) {
-          navigate(0)
-        }
-
-
+        await delay(2);
+        navigate(0); // Refresh to update scores
+      } else {
+        setSubmissions(prev => ({ ...prev, [challengeId]: 'incorrect' }));
+        setErrorMessages(prev => ({ ...prev, [challengeId]: response.message || "Incorrect flag" }));
+        setTimeout(() => {
+          setSubmissions(prev => ({ ...prev, [challengeId]: null }));
+        }, 2000);
       }
-    } else {
-      setSubmissions(prev => ({ ...prev, [challengeId]: 'incorrect' }));
-      setTimeout(() => {
-        setSubmissions(prev => ({ ...prev, [challengeId]: null }));
-      }, 2000);
+    } catch (err) {
+      console.error("Submit failed:", err);
+      setErrorMessages(prev => ({ ...prev, [challengeId]: "Network error. Please try again." }));
+    } finally {
+      setSubmitting(prev => ({ ...prev, [challengeId]: false }));
     }
   };
 
@@ -191,9 +217,11 @@ const Flag = ({ flags, points,score }) => {
               const Icon = challenge.icon;
               const isSolved = solvedChallenges[challenge.id];
               const submission = submissions[challenge.id];
+              // Challenge is unlocked if it's the first one (id=0) or if previous challenge is solved
+              const isUnlocked = challenge.id === 0 || solvedChallenges[challenge.id - 1];
 
               return (
-                <div key={challenge.id} className="challenge-card">
+                <div key={challenge.id} className={`challenge-card ${!isUnlocked ? 'challenge-locked' : ''}`}>
                   {/* Challenge Header */}
                   <div className={`challenge-header ${challenge.color}`}>
                     <div className="challenge-header-overlay"></div>
@@ -214,6 +242,8 @@ const Flag = ({ flags, points,score }) => {
                       </div>
                       {isSolved ? (
                         <CheckCircle className="status-icon status-solved" />
+                      ) : isUnlocked ? (
+                        <Unlock className="status-icon status-unlocked" />
                       ) : (
                         <Lock className="status-icon status-locked" />
                       )}
@@ -234,42 +264,53 @@ const Flag = ({ flags, points,score }) => {
 
                     {/* Submit Form */}
                     <div className="submit-section">
-                      <input
-                        type="text"
-                        placeholder="Enter flag here..."
-                        value={inputValues[challenge.id] || ''}
-                        onChange={(e) => setInputValues(prev => ({ ...prev, [challenge.id]: e.target.value }))}
-                        disabled={isSolved}
-                        className="flag-input"
-                      />
-
-                      <button
-                        onClick={() => handleSubmit(challenge.id, challenge.flag)}
-                        disabled={isSolved}
-                        className={`submit-button ${isSolved ? 'submit-button-solved' : 'submit-button-active'}`}
-                      >
-                        {isSolved ? (
-                          <span className="button-content">
-                            <CheckCircle className="button-icon" />
-                            Solved - {challenge.points} Points
-                          </span>
-                        ) : (
-                          `Submit Flag (+${challenge.points} pts)`
-                        )}
-                      </button>
-
-                      {submission === 'correct' && !isSolved && (
-                        <div className="feedback-box feedback-correct">
-                          <CheckCircle className="feedback-icon" />
-                          <span className="feedback-text">Correct! +{challenge.points} points</span>
+                      {!isUnlocked ? (
+                        <div className="locked-message">
+                          <Lock className="locked-icon" />
+                          <span>Complete the previous challenge to unlock</span>
                         </div>
-                      )}
+                      ) : (
+                        <>
+                          <input
+                            type="text"
+                            placeholder="Enter flag here..."
+                            value={inputValues[challenge.id] || ''}
+                            onChange={(e) => setInputValues(prev => ({ ...prev, [challenge.id]: e.target.value }))}
+                            disabled={isSolved || submitting[challenge.id]}
+                            className="flag-input"
+                          />
 
-                      {submission === 'incorrect' && (
-                        <div className="feedback-box feedback-incorrect">
-                          <XCircle className="feedback-icon" />
-                          <span className="feedback-text">Incorrect flag. Try again!</span>
-                        </div>
+                          <button
+                            onClick={() => handleSubmit(challenge.id)}
+                            disabled={isSolved || submitting[challenge.id]}
+                            className={`submit-button ${isSolved ? 'submit-button-solved' : 'submit-button-active'}`}
+                          >
+                            {isSolved ? (
+                              <span className="button-content">
+                                <CheckCircle className="button-icon" />
+                                Solved - {challenge.points} Points
+                              </span>
+                            ) : submitting[challenge.id] ? (
+                              'Checking...'
+                            ) : (
+                              `Submit Flag (+${challenge.points} pts)`
+                            )}
+                          </button>
+
+                          {submission === 'correct' && (
+                            <div className="feedback-box feedback-correct">
+                              <CheckCircle className="feedback-icon" />
+                              <span className="feedback-text">Correct! +{challenge.points} points</span>
+                            </div>
+                          )}
+
+                          {submission === 'incorrect' && (
+                            <div className="feedback-box feedback-incorrect">
+                              <XCircle className="feedback-icon" />
+                              <span className="feedback-text">{errorMessages[challenge.id] || "Incorrect flag. Try again!"}</span>
+                            </div>
+                          )}
+                        </>
                       )}
                     </div>
                   </div>

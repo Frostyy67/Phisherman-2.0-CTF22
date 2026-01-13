@@ -1,119 +1,156 @@
-import { useState,useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Lock, Unlock, Trophy, Star, Zap, Shield, Terminal, Code, Network } from 'lucide-react';
+import { Lock, Unlock, Trophy, Star, Zap, Shield, Terminal, Code, Network, Database, Globe, FileSearch } from 'lucide-react';
 import '../styles/Levels.css';
 
 const Levels = ({ leveling }) => {
-  const navigate=useNavigate()
-  const [challenges, setChallenges] = useState([
+  const navigate = useNavigate();
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [level1Complete, setLevel1Complete] = useState(false);
+  const [level2Complete, setLevel2Complete] = useState(false);
+
+  // Check admin status and level completion
+  useEffect(() => {
+    async function checkStatus() {
+      try {
+        const res = await fetch("http://localhost:3000/checklogin", {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" }
+        });
+        const response = await res.json();
+        if (response.success) {
+          // Check if admin
+          if (response.username === "Admin") {
+            setIsAdmin(true);
+          }
+        } else {
+          navigate('/login');
+        }
+      } catch (err) {
+        console.error("Fetch failed:", err);
+      }
+    }
+
+    async function checkLevel2() {
+      try {
+        const res = await fetch("http://localhost:3000/check-level2", {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" }
+        });
+        const response = await res.json();
+        if (response.success && response.solved) {
+          setLevel2Complete(true);
+        }
+      } catch (err) {
+        console.error("Check level 2 failed:", err);
+      }
+    }
+
+    checkStatus();
+    checkLevel2();
+  }, [navigate]);
+
+  // Check if all Level 1 challenges are complete
+  useEffect(() => {
+    if (leveling && leveling.length >= 4) {
+      const allComplete = leveling[0] && leveling[1] && leveling[2] && leveling[3];
+      setLevel1Complete(allComplete);
+    }
+  }, [leveling]);
+
+  const levels = [
     {
       id: 1,
-      title: "Binary Exploitation 101",
-      category: "pwn",
-      difficulty: "Easy",
-      points: 100,
-      locked: false,
-      completed: false,
-      description: "Find the buffer overflow vulnerability and exploit it to get the flag.",
+      title: "Level 1 - Foundations",
+      category: "mixed",
+      difficulty: "Easy-Medium",
+      points: "100-500",
+      totalChallenges: 4,
+      locked: false,  // Level 1 always unlocked
+      completed: level1Complete,
+      description: "Start your CTF journey with 4 challenges covering cryptography, web exploitation, reverse engineering, and forensics.",
       icon: Terminal,
+      route: '/flags'
     },
     {
       id: 2,
-      title: "Reverse Engineering Master",
-      category: "reverse",
-      difficulty: "Hard",
-      points: 500,
-      locked: !leveling[0],
-      completed: false,
-      description: "Analyze the binary and find the license key generation algorithm.",
-      icon: Zap,
+      title: "Level 2 - SQL Injection",
+      category: "web",
+      difficulty: "Medium",
+      points: "100",
+      totalChallenges: 1,
+      locked: !level1Complete && !isAdmin,  // Unlocks after Level 1 OR if admin
+      completed: level2Complete,
+      description: "Master SQL injection techniques against a real-world vulnerable application. Find the hidden product!",
+      icon: Database,
+      route: '/level2'
     },
     {
       id: 3,
-      title: "Network Forensics",
-      category: "forensics",
-      difficulty: "Medium",
-      points: 300,
-      locked: !leveling[1],
+      title: "Level 3 - Coming Soon",
+      category: "advanced",
+      difficulty: "Hard",
+      points: "???",
+      totalChallenges: "?",
+      locked: true,  // Coming soon - always locked
       completed: false,
-      description: "Analyze the packet capture and find the exfiltrated data.",
-      icon: Network,
+      description: "Advanced challenges await... Stay tuned!",
+      icon: Globe,
+      route: null
     },
     {
       id: 4,
-      title: "SQL Injection Pro",
-      category: "web",
-      difficulty: "Hard",
-      points: 450,
-      locked: !leveling[2],
+      title: "Level 4 - Master Challenge",
+      category: "expert",
+      difficulty: "Expert",
+      points: "???",
+      totalChallenges: "?",
+      locked: true,  // Coming soon - always locked
       completed: false,
-      description: "Bypass advanced SQL filters and extract sensitive database information.",
-      icon: Code,
+      description: "The ultimate test of your skills. Are you ready?",
+      icon: Shield,
+      route: null
     }
-  ]);
+  ];
 
-  const [selectedChallenge, setSelectedChallenge] = useState(null);
-  const [flagInput, setFlagInput] = useState('');
+  const [selectedLevel, setSelectedLevel] = useState(null);
 
   const getDifficultyColor = (difficulty) => {
     switch (difficulty) {
       case 'Easy': return 'difficulty-easy';
+      case 'Easy-Medium': return 'difficulty-easy';
       case 'Medium': return 'difficulty-medium';
       case 'Hard': return 'difficulty-hard';
+      case 'Expert': return 'difficulty-hard';
       default: return '';
     }
   };
 
   const getCategoryColor = (category) => {
     const colors = {
-      pwn: 'category-pwn',
+      mixed: 'category-crypto',
       web: 'category-web',
-      crypto: 'category-crypto',
-      reverse: 'category-reverse',
-      forensics: 'category-forensics'
+      advanced: 'category-reverse',
+      expert: 'category-forensics'
     };
     return colors[category] || '';
   };
 
-  const handleChallengeClick = (challenge) => {
-    if (!challenge.locked) {
-      setSelectedChallenge(challenge);
-      setFlagInput('');
+  const handleLevelClick = (level) => {
+    if (!level.locked || isAdmin) {
+      setSelectedLevel(level);
     }
   };
 
-  const handleSubmitFlag = () => {
-    if (flagInput.trim()) {
-      alert(`Flag submitted for ${selectedChallenge.title}: ${flagInput}`);
-      setFlagInput('');
+  const handleStartLevel = () => {
+    if (selectedLevel && selectedLevel.route) {
+      navigate(selectedLevel.route);
     }
+    setSelectedLevel(null);
   };
 
-  useEffect(() => {
-    async function checklogin() {
-
-      try {
-        const res = await fetch("http://localhost:3000/checklogin", {
-          method: "POST",
-          credentials: "include",
-          headers: {
-            "Content-Type": "application/json"
-          }
-        });
-
-        const response = await res.json();
-        if (response.success == true) {
-          navigate('/')
-        }
-        else {
-          navigate('/login')
-        }
-      } catch (err) {
-        console.error("Fetch failed:", err);
-      }
-    }
-    checklogin()
-  }, [])
   return (
     <div className="ctf-container">
       {/* Animated Background */}
@@ -124,25 +161,33 @@ const Levels = ({ leveling }) => {
         <div className="glow-orb orb-3"></div>
       </div>
 
+      {/* Admin Badge */}
+      {isAdmin && (
+        <div className="admin-badge-container">
+          <span className="admin-badge">🔓 Admin Mode - All Levels Unlocked</span>
+        </div>
+      )}
+
       {/* Main Content */}
       <main className="ctf-main">
         <div className="challenges-grid">
-          {challenges.map((challenge) => {
-            const Icon = challenge.icon;
+          {levels.map((level) => {
+            const Icon = level.icon;
+            const isAccessible = !level.locked || isAdmin;
             return (
               <div
-                key={challenge.id}
-                className={`challenge-card ${challenge.locked ? 'locked' : ''} ${challenge.completed ? 'completed' : ''}`}
-                onClick={() => handleChallengeClick(challenge)}
+                key={level.id}
+                className={`challenge-card ${!isAccessible ? 'locked' : ''} ${level.completed ? 'completed' : ''}`}
+                onClick={() => handleLevelClick(level)}
               >
                 <div className="card-header">
                   <div className="icon-wrapper">
                     <Icon className="challenge-icon" />
                   </div>
                   <div className="lock-status">
-                    {challenge.locked ? (
+                    {!isAccessible ? (
                       <Lock className="lock-icon" />
-                    ) : challenge.completed ? (
+                    ) : level.completed ? (
                       <Unlock className="unlock-icon completed-icon" />
                     ) : (
                       <Unlock className="unlock-icon" />
@@ -151,31 +196,31 @@ const Levels = ({ leveling }) => {
                 </div>
 
                 <div className="card-body">
-                  <h3 className="challenge-title">{challenge.title}</h3>
-                  <p className="challenge-description">{challenge.description}</p>
+                  <h3 className="challenge-title">{level.title}</h3>
+                  <p className="challenge-description">{level.description}</p>
 
                   <div className="challenge-meta">
-                    <span className={`category-badge ${getCategoryColor(challenge.category)}`}>
-                      {challenge.category.toUpperCase()}
+                    <span className={`category-badge ${getCategoryColor(level.category)}`}>
+                      {level.totalChallenges} {level.totalChallenges === 1 ? 'CHALLENGE' : 'CHALLENGES'}
                     </span>
-                    <span className={`difficulty-badge ${getDifficultyColor(challenge.difficulty)}`}>
-                      {challenge.difficulty}
+                    <span className={`difficulty-badge ${getDifficultyColor(level.difficulty)}`}>
+                      {level.difficulty}
                     </span>
                   </div>
 
                   <div className="card-footer">
-                    <span className="points">{challenge.points} pts</span>
+                    <span className="points">{level.points} pts</span>
                   </div>
                 </div>
 
-                {challenge.locked && (
+                {!isAccessible && (
                   <div className="locked-overlay">
                     <Lock className="locked-icon-large" />
-                    <span className="locked-text">Complete previous challenges</span>
+                    <span className="locked-text">Complete previous level</span>
                   </div>
                 )}
 
-                {challenge.completed && (
+                {level.completed && (
                   <div className="completed-badge">
                     <Trophy className="trophy-icon" />
                   </div>
@@ -186,40 +231,44 @@ const Levels = ({ leveling }) => {
         </div>
       </main>
 
-      {/* Challenge Modal */}
-      {selectedChallenge && (
-        <div className="modal-overlay" onClick={() => setSelectedChallenge(null)}>
+      {/* Level Modal */}
+      {selectedLevel && (
+        <div className="modal-overlay" onClick={() => setSelectedLevel(null)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h2>{selectedChallenge.title}</h2>
-              <button className="close-btn" onClick={() => setSelectedChallenge(null)}>×</button>
+              <h2>{selectedLevel.title}</h2>
+              <button className="close-btn" onClick={() => setSelectedLevel(null)}>×</button>
             </div>
             <div className="modal-body">
-              <p className="modal-description">{selectedChallenge.description}</p>
+              <p className="modal-description">{selectedLevel.description}</p>
 
               <div className="modal-meta">
                 <div className="meta-item">
-                  <span className="meta-label">Category:</span>
-                  <span className={`category-badge ${getCategoryColor(selectedChallenge.category)}`}>
-                    {selectedChallenge.category.toUpperCase()}
-                  </span>
+                  <span className="meta-label">Challenges:</span>
+                  <span className="points-value">{selectedLevel.totalChallenges}</span>
                 </div>
                 <div className="meta-item">
                   <span className="meta-label">Difficulty:</span>
-                  <span className={`difficulty-badge ${getDifficultyColor(selectedChallenge.difficulty)}`}>
-                    {selectedChallenge.difficulty}
+                  <span className={`difficulty-badge ${getDifficultyColor(selectedLevel.difficulty)}`}>
+                    {selectedLevel.difficulty}
                   </span>
                 </div>
                 <div className="meta-item">
                   <span className="meta-label">Points:</span>
-                  <span className="points-value">{selectedChallenge.points}</span>
+                  <span className="points-value">{selectedLevel.points}</span>
                 </div>
               </div>
 
               <div className="flag-submit">
-                <button className="submit-btn" onClick={handleSubmitFlag}>
-                  Start Machine
-                </button>
+                {selectedLevel.route ? (
+                  <button className="submit-btn" onClick={handleStartLevel}>
+                    {selectedLevel.completed ? 'View Level' : 'Start Level'}
+                  </button>
+                ) : (
+                  <button className="submit-btn disabled" disabled>
+                    Coming Soon
+                  </button>
+                )}
               </div>
             </div>
           </div>

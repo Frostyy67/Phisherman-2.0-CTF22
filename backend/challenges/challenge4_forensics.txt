@@ -1,0 +1,79 @@
+================================================
+    NETWORK FORENSICS - INTERCEPTED COMMUNICATION
+================================================
+
+CASE FILE: #NF-2024-0042
+DATE: 2024-03-15
+ANALYST: Agent Smith
+
+SITUATION:
+----------
+We intercepted suspicious network traffic from a known 
+threat actor. The message appears to be encrypted using
+a simple cipher.
+
+INTERCEPTED PACKET DATA:
+========================
+
+--- BEGIN TRANSMISSION ---
+
+From: agent_x@darknet.onion
+To: handler@shadow.ops
+Subject: Mission Complete
+
+Gur cnpxntr unf orra qryvirerq.
+Bhe bcrengvba jnf n fhpprff.
+
+Gur svany pbqr vf: PGS{argjbex_sberfavpf_ceb}
+
+Njnvgvat shegure vafgehpgvbaf.
+
+- Ntrag K
+
+--- END TRANSMISSION ---
+
+
+ANALYSIS NOTES:
+===============
+- Cipher appears to be ROT13 (rotate by 13 positions)
+- Common technique used by amateur operatives
+- Each letter shifted 13 positions in alphabet
+
+DECRYPTION HINT:
+================
+ROT13 is symmetric: encoding and decoding use same operation
+A→N, B→O, C→P, ... N→A, O→B, P→C, ...
+
+Online tools: rot13.com, or use Python:
+  import codecs
+  codecs.decode("PGS{argjbex_sberfavpf_ceb}", 'rot_13')
+
+YOUR TASK:
+==========
+Decrypt the message to find the flag hidden within.
+The flag format is: CTF{...}
+
+================================================
+
+<!-- 
+SOLUTION FOR CTF ORGANIZERS:
+============================
+Encrypted: PGS{argjbex_sberfavpf_ceb}
+Decrypted: CTF{network_forensics_pro}
+
+ROT13 mapping for the flag:
+P→C, G→T, S→F, {→{
+a→n, r→e, g→t, j→w, b→o, e→r, x→k
+_→_
+s→f, b→o, e→r, r→e, f→s, a→n, v→i, p→c, f→s
+_→_
+c→p, e→r, b→o
+}→}
+
+Full translation:
+"Gur cnpxntr unf orra qryvirerq." → "The package has been delivered."
+"Bhe bcrengvba jnf n fhpprff." → "Our operation was a success."
+"Gur svany pbqr vf:" → "The final code is:"
+"Njnvgvat shegure vafgehpgvbaf." → "Awaiting further instructions."
+"Ntrag K" → "Agent X"
+-->
