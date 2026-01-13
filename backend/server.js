@@ -16,33 +16,20 @@ const DB_URL = process.env.ATLAS_URL;
 
 let USE_MEMORY_DB = false;
 
-// ==================== REGISTERED USERS ====================
-const REGISTERED_USERS = {
-  "admin123@phisherman.ctf": { password: "admin123", name: "Admin" },
-  "admin2@phisherman.ctf": { password: "admin456", name: "Admin2" },
-  "afnanothayi232500@gmail.com": { password: "afnan@123", name: "a.fnan" },
-  "kiranng@yahoo.com": { password: "kiran@123", name: "Crzaycat007" },
-  "nivednarayananm2@gmail.com": { password: "nived@123", name: "devil_42401" },
-  "bansilsaji03@gmail.com": { password: "bansil@123", name: "bytetyson_71338" },
-  "dhaneshupai7@gmail.com": { password: "dhanesh@123", name: "n70ue" }
-};
+// ==================== REGISTERED USERS (from .env) ====================
+const REGISTERED_USERS = JSON.parse(process.env.REGISTERED_USERS || '{}');
 
 // In-memory user storage
 let memoryUsers = [];
 
-// ==================== CHALLENGES ====================
-const CHALLENGES = [
-  { id: 0, title: "The Hidden Message", points: 100, flag: "Hello_CTF_Player{1m_a_bAs64_exp3rt}" },
-  { id: 1, title: "SQL Injection Master", points: 500, flag: "CTF{sql_1nj3ct10n_m4st3r_2024}" },
-  { id: 2, title: "Reverse Engineering", points: 300, flag: "CTF{r3v3rs3_mast3r}" },
-  { id: 3, title: "Network Forensics", points: 450, flag: "CTF{network_forensics_pro}" }
-];
+// ==================== CHALLENGES (from .env) ====================
+const CHALLENGES = JSON.parse(process.env.CHALLENGES || '[]');
 
 const LEVEL2_CHALLENGE = {
   id: 0,
   title: "SQL Injection - Juice Shop",
-  basePoints: 100,
-  flag: "PHISH{sqli_hidden_product}"
+  basePoints: parseInt(process.env.LEVEL2_BASE_POINTS) || 100,
+  flag: process.env.LEVEL2_FLAG || ""
 };
 
 // ==================== RATE LIMITING ====================
