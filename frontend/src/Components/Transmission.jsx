@@ -131,7 +131,7 @@ Now, wake up, we have a city to burn.
     if (joinClicked && !terminated) {
         return (
             <div style={{
-                position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh',
+                position: 'fixed', top: 0, left: 0, width: '100vw', height: 'calc(var(--vh, 1vh) * 100)',
                 background: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center',
                 color: '#ff0000', fontFamily: 'monospace', fontSize: '3rem',
                 textAlign: 'center', animation: 'fadeIn 3s ease-in'
@@ -145,7 +145,7 @@ Now, wake up, we have a city to burn.
     if (terminated) {
         return (
             <div style={{
-                position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh',
+                position: 'fixed', top: 0, left: 0, width: '100vw', height: 'calc(var(--vh, 1vh) * 100)',
                 background: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center',
                 color: '#333', fontFamily: 'monospace', fontSize: '2rem',
                 flexDirection: 'column', gap: '20px'
@@ -157,7 +157,7 @@ Now, wake up, we have a city to burn.
     }
 
     return (
-        <div className="transmission-container" style={{ minHeight: '100vh' }}>
+        <div className="transmission-container" style={{ minHeight: 'calc(var(--vh, 1vh) * 100)' }}>
             <div className="crt-overlay"></div>
             <div className="scanline"></div>
 
@@ -175,10 +175,10 @@ Now, wake up, we have a city to burn.
 
 
             {/* --- Phase 3: Transmission --- */}
-            {phase === 'transmission' && (
+                {phase === 'transmission' && (
                 <div style={{
                     display: 'flex', flexDirection: 'column', alignItems: 'center',
-                    justifyContent: 'center', padding: '40px', minHeight: '100vh'
+                    justifyContent: 'center', padding: '40px', minHeight: 'calc(var(--vh, 1vh) * 100)'
                 }}>
                     <div className="transmission-content">
                         <div style={{ marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '10px', opacity: 0.7, color: '#00ff00' }}>

@@ -3,9 +3,11 @@
 
 .transmission-container {
     font-family: 'Share Tech Mono', monospace;
-    overflow: hidden;
     position: relative;
     background-color: #050505;
+    /* Use dynamic viewport height to avoid mobile address-bar jumps */
+    min-height: calc(var(--vh, 1vh) * 100);
+    overflow-x: hidden;
 }
 
 /* --- Phase 0: Common CRT Effects --- */
@@ -14,7 +16,7 @@
     top: 0;
     left: 0;
     width: 100vw;
-    height: 100vh;
+    height: calc(var(--vh, 1vh) * 100);
     background:
         linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%),
         linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
@@ -38,11 +40,11 @@
 
 @keyframes scanline {
     0% {
-        transform: translateY(-100vh);
+        transform: translateY(calc(var(--vh, 1vh) * -100));
     }
 
     100% {
-        transform: translateY(100vh);
+        transform: translateY(calc(var(--vh, 1vh) * 100));
     }
 }
 
@@ -53,7 +55,7 @@
     justify-content: flex-end;
     /* Align to bottom like a terminal boot */
     padding: 2rem;
-    height: 100vh;
+    height: calc(var(--vh, 1vh) * 100);
     box-sizing: border-box;
     color: #0f0;
     text-shadow: 0 0 5px #0f0;
