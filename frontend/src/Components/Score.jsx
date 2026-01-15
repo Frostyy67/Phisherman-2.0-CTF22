@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Trophy, Medal, Crown, TrendingUp, TrendingDown, Minus, Users, Target, Zap, Award, ChevronDown, ChevronUp, Clock, Flag } from 'lucide-react';
 import '../styles/Score.css';
 import { useNavigate } from 'react-router-dom'
+import config from '../config';
 
 
 const Score = () => {
@@ -10,7 +11,7 @@ const Score = () => {
   const [total_solves, setsolve] = useState(0)
   const [activePlayers, setplayers] = useState(0)
   async function peoples() {
-    const res = await fetch("http://localhost:3000/scoreboard", {
+    const res = await fetch(`${config.API_BASE_URL}/scoreboard`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json"

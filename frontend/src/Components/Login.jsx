@@ -3,6 +3,7 @@ import { Shield, User, Mail, Lock, Terminal, Eye, EyeOff, ChevronRight, Sparkles
 import '../styles/Login.css';
 import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
+import config from '../config';
 
 const Login = () => {
   const navigate = useNavigate()
@@ -30,7 +31,7 @@ const Login = () => {
 
   async function onsubmit(newdata) {
     try {
-      const res = await fetch("http://localhost:3000/login", {
+      const res = await fetch(`${config.API_BASE_URL}/login`, {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },

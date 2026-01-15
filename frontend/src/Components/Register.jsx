@@ -43,7 +43,7 @@ const Register = () => {
             // App.jsx DID import config.
             // I'll stick to localhost:3000 for now to match Login.jsx behavior exactly as seen.
 
-            const res = await fetch("http://localhost:3000/register", {
+            const res = await fetch(`${config.API_BASE_URL}/register`, {
                 method: "POST",
                 credentials: "include",
                 headers: { "Content-Type": "application/json" },
