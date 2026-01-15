@@ -515,8 +515,18 @@ app.post('/login', async (req, res) => {
       console.log(`[DEBUG] Password match result: ${isMatch}`);
       if (isMatch) {
         const token = jwt.sign({ email: user.email }, secretKey, { expiresIn: '7d' });
-        res.cookie("token", token, { maxAge: 1000 * 60 * 60 * 24 * 7, httpOnly: true, secure: false, sameSite: "lax" });
-        res.cookie("email", user.email, { maxAge: 1000 * 60 * 60 * 24 * 7, httpOnly: true, secure: false, sameSite: "lax" });
+        res.cookie("token", token, {
+          maxAge: 1000 * 60 * 60 * 24 * 7,
+          httpOnly: true,
+          secure: true,   // Required for SameSite=None
+          sameSite: "none" // Required for Cross-Site (Vercel -> Render)
+        });
+        res.cookie("email", user.email, {
+          maxAge: 1000 * 60 * 60 * 24 * 7,
+          httpOnly: true,
+          secure: true,
+          sameSite: "none"
+        });
         return res.status(200).json({ success: true, message: "Authenticated" });
       }
       else {
